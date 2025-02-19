@@ -1,14 +1,22 @@
-import pprint
-from datetime import datetime, timedelta
-
-from CouturePythonDockerPlugin import CouturePythonDockerOperator
-from CoutureSparkPlugin import CoutureSparkOperator
-from CoutureSpark3Plugin import CoutureSpark3Operator
+#airflow imports
 from airflow import DAG
 from airflow.models import Variable
 from airflow.utils.task_group import TaskGroup
 from airflow.operators.dummy_operator import DummyOperator
+
+#Couture imports
+from CouturePythonDockerPlugin import CouturePythonDockerOperator
+from CoutureSparkPlugin import CoutureSparkOperator
+from CoutureSpark3Plugin import CoutureSpark3Operator
+
+#Python imports
 import re
+import pprint
+from datetime import datetime, timedelta
+
+# python file imports
+from search_dag_utils import change_vertical_name
+
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -18,8 +26,6 @@ pp = pprint.PrettyPrinter(indent=4)
 
 catalogue_date = "05092024"
 catalogue_label = "jiomart"
-# vertical = "unified_catalog_across_all_verticals"
-vertical = "UnifiedAllVerticalsSelectAttributes"  # "Unified3VerticalsSelectAttributes"
 # history_date = "20220921_20221116"
 # Variable.set("search_catalogue_date", catalogue_date)
 catalogue_date_old = "05092024"  # Or Variable.get() the best Catalogue Date
@@ -43,9 +49,9 @@ if len(str_date) == 0:
     str_date = datetime.now().strftime('%Y%m%d')
 dirBasePath = "/data1/searchengine/"
 dirPath = f"{dirBasePath}processed/{catalogue_label}/{catalogue_date}/"
-dirPathProcessed = f"{dirPath}/etl/{vertical}/"
-dirPathProcessedOld = f"{dirPath}/etl/{vertical}/"
-dirPathAnalysis = f"{dirBasePath}analysis/{catalogue_label}/{vertical}/deltacatalogue_{datetime.strptime(catalogue_date, '%d%m%Y').strftime('%Y%m%d')}/"
+dirPathProcessed = f"{dirPath}/etl/"
+dirPathProcessedOld = f"{dirPath}/etl/"
+# dirPathAnalysis = f"{dirBasePath}analysis/{catalogue_label}/{vertical}/deltacatalogue_{datetime.strptime(catalogue_date, '%d%m%Y').strftime('%Y%m%d')}/"
 
 date = datetime(2018, 1, 2)
 
@@ -80,14 +86,14 @@ environment = {
 
 # GetCatalogueFromFTP = SSHOperator(
 #     ssh_conn_id="AIRFLOW_CONN_SSH_SERVER",  # To connect to DBS
-#     task_id=vertical+"GetCatalogueFromFTP",
+#     task_id=vertical_prefix+"GetCatalogueFromFTP",
 #     command=bash_cmd_download,  # Runs these commands on the SSH"ed server (i.e. DBS)
 #     # description="Fetches catalogue data shared by RRA from sftp",
 #     dag=Dag
 # )
 
 PreProcessCatalogueData = CoutureSpark3Operator(
-    task_id=vertical+"PreProcessCatalogueData",
+    task_id="PreProcessCatalogueData",
     method_id="PreProcessCatalogueData",
     class_path=classPath,
     code_artifact=code_artifact,
@@ -100,7 +106,7 @@ PreProcessCatalogueData = CoutureSpark3Operator(
                       "test": testing},
     input_base_dir_path=dirPath,
     output_base_dir_path=dirPathProcessed,
-    input_filenames_dict={"catalogue_data": f"catalogue/{vertical}/"},  # .json"},
+    input_filenames_dict={"catalogue_data": f"catalogue/FinalDF3"},  # .json"},
     output_filenames_dict={"processed_catalogue": "CatalogueAttributes"},
     dag=Dag,
     # config_group="config_group_jiomart",
@@ -114,7 +120,7 @@ verticals = [
     "Home & Lifestyle",
     "Groceries",
     "Industrial & Professional Supplies",
-    "Books, Music &Stationery",
+    "Books, Music & Stationery",
     "Furniture",
     "Beauty",
     "Sports, Toys & Luggage",
@@ -124,16 +130,6 @@ verticals = [
     "Premium Fruits",
 ]
 
-# function to change the vertical names to the required format
-def change_vertical_name(vertical):
-    
-    # replace the & with "_" and "," with "_"
-    vertical = re.sub(r' ', '', vertical)
-    vertical = re.sub(r'&', 'and', vertical)
-    vertical = re.sub(r',', '_', vertical)
-
-    return vertical
-
 # we are trying to loop over the level2 for each vertical
 # ======== LEVEL 2 ======== #
 
@@ -141,20 +137,20 @@ vertical_tasks = []
 
 for vertical in verticals:
 
-    dirPathProcessed_input = f"/data1/searchengine/processed/jiomart/05092024/etl/Final/CatalogueAttributes/l1_name={vertical}/"
+    dirPathProcessed_input = f"/data1/searchengine/processed/jiomart/05092024/etl/CatalogueAttributes/l1_name={vertical}/"
+    dirPathAnalysis = f"{dirBasePath}analysis/{catalogue_label}/{vertical}/deltacatalogue_{datetime.strptime(catalogue_date, '%d%m%Y').strftime('%Y%m%d')}/"
+    dirPathProcessed_output = f"{dirPath}/etl/{vertical}/"
 
-    # dirPathAnalysis = f"{dirBasePath}analysis/{catalogue_label}/{vertical}/deltacatalogue_{datetime.strptime(catalogue_date, '%d%m%Y').strftime('%Y%m%d')}/"
-    dirPathProcessed_output = f"{dirPath}/etl/Final/{vertical}/"
-
-    # changing the vertical path 
-    vertical = change_vertical_name(vertical)
+    # changing the vertical path it replaces the space with underscore and & with space
+    vertical_prefix = change_vertical_name(vertical)
+    vertical_prefix += "."
     
-     # Dummy task to trigger the DAG group
-    triggerTask = DummyOperator(task_id=vertical+"_TriggerTask",dag=Dag)
+    # Dummy task to trigger the DAG group
+    triggerTask = DummyOperator(task_id=vertical_prefix+"TriggerTask",dag=Dag)
 
-    with TaskGroup(f"vertical_{vertical}", dag=Dag) as vertical_group:
+    with TaskGroup(f"{vertical}", dag=Dag) as vertical_group:
         GenerateCatalogueSummary = CoutureSpark3Operator(
-            task_id=vertical+"GenerateCatalogueSummary",
+            task_id=vertical_prefix+"GenerateCatalogueSummary",
             dag=Dag,
             # code_artifact="couture-search-engine-etl-2.0.0-bhavesh3.jar",
             class_path=classPath,
@@ -171,7 +167,7 @@ for vertical in verticals:
         # GenerateCatalogueSummary.set_upstream([PreProcessCatalogueData])
 
         DeriveCategoryAssociations = CoutureSpark3Operator(
-            task_id=vertical+"DeriveCategoryAssociations",
+            task_id=vertical_prefix+"DeriveCategoryAssociations",
             method_id="DeriveCategoryAssociations",
             class_path=classPath,
             # code_artifact="couture-search-engine-etl-2.0.0-bhavesh3.jar",
@@ -191,7 +187,7 @@ for vertical in verticals:
         # DeriveCategoryAssociations.set_upstream([PreProcessCatalogueData])
 
         ExtractBrands = CoutureSpark3Operator(
-            task_id=vertical+"ExtractBrandsAndSpecialBrands",
+            task_id=vertical_prefix+"ExtractBrandsAndSpecialBrands",
             dag=Dag,
             # code_artifact="couture-search-engine-etl-2.0.0-bhavesh3.jar",
             class_path=classPath,
@@ -209,7 +205,7 @@ for vertical in verticals:
         # ExtractBrands.set_upstream([PreProcessCatalogueData])
 
         TransposeCatalogueAttributes = CoutureSpark3Operator(
-            task_id=vertical+"TransposeCatalogueAttributes",
+            task_id=vertical_prefix+"TransposeCatalogueAttributes",
             method_id="TransposeCatalogueAttributes",
             class_path=classPath,
             code_artifact=code_artifact,
@@ -225,7 +221,7 @@ for vertical in verticals:
         # TransposeCatalogueAttributes.set_upstream([PreProcessCatalogueData])
 
         TransposeCatalogueNumericalAttributes = CoutureSpark3Operator(
-            task_id=vertical+"TransposeCatalogueNumericalAttributes",
+            task_id=vertical_prefix+"TransposeCatalogueNumericalAttributes",
             dag=Dag,
             code_artifact=code_artifact,
             class_path=classPath,
@@ -241,7 +237,7 @@ for vertical in verticals:
 
 
         GenerateCatalogueWordIndexes = CouturePythonDockerOperator(
-            task_id=vertical+'GenerateCatalogueWordIndexes',
+            task_id=vertical_prefix+'GenerateCatalogueWordIndexes',
             image=python_image,
             api_version='auto',
             auto_remove=False,
@@ -267,6 +263,3 @@ for vertical in verticals:
         GenerateCatalogueWordIndexes.set_upstream([TransposeCatalogueAttributes, TransposeCatalogueNumericalAttributes])
         
     PreProcessCatalogueData >> triggerTask >> vertical_group
-
-
- 
