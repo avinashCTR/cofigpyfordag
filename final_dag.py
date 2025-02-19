@@ -19,6 +19,7 @@ import pprint
 from datetime import datetime, timedelta
 
 # imports from other files
+import jiomart_legos_conf.task_group_conf as conf
 from search_dag_utils import change_vertical_name
 
 
@@ -1187,8 +1188,6 @@ paths_conf = {
 }
 
 Dag = DAG("search_engine_legos_jiomart_master", default_args=default_args, concurrency=4, schedule_interval=None, tags=["search-engine"])
-
-TARGET_DAG_ID = "search_engine_legos_jiomart_complete_catalog_standardized"
 
 verticals = [
     "Fashion",
