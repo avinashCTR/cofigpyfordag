@@ -19,7 +19,7 @@ import pprint
 from datetime import datetime, timedelta
 
 # imports from other files
-import jiomart_legos_conf.task_group_conf as conf
+from jiomart_legos_conf import task_configs as conf
 from search_dag_utils import change_vertical_name
 
 
@@ -531,7 +531,7 @@ def task_group(dag,vertical,conf,paths_conf):
                 code_artifact=code_artifact,
                 class_path=classPath,
                 method_id="FilterCategoriesForWords",
-                method_args_dict=conf["FilterCategoriesForWords"]["method_args_dict"],
+                method_args_dict=conf["FilterCategoriesForPhrases"]["method_args_dict"],
                 input_base_dir_path="",
                 output_base_dir_path=dirPathProcessed,
                 input_filenames_dict={"right_words": f"{dirPathProcessed}MergedPhrases",
@@ -598,7 +598,7 @@ def task_group(dag,vertical,conf,paths_conf):
             description=''
         )
         # CombineWordProperties.set_upstream([GenerateSynonyms, AddHistoryCategoriesToWords]) #GenerateSubstitutes
-        CombineWordProperties.set_upstream([GenerateSynonyms]) #GenerateSubstitutes
+        CombineWordProperties.set_upstream([GenerateSynonyms,FilterCategoriesForWords]) #GenerateSubstitutes
 
         CombinePhraseProperties = CoutureSparkOperator(
             task_id=vertical_prefix+'CombinePhraseProperties',
@@ -630,7 +630,7 @@ def task_group(dag,vertical,conf,paths_conf):
             description=''
         )
         # CombinePhraseProperties.set_upstream([GenerateSynonyms, AddHistoryCategoriesToPhrases]) #GenerateSubstitutes
-        CombinePhraseProperties.set_upstream([GenerateSynonyms]) #GenerateSubstitutes
+        CombinePhraseProperties.set_upstream([GenerateSynonyms,FilterCategoriesForPhrases]) #GenerateSubstitutes
 
 
         with TaskGroup(vertical_prefix+"GenerateWordVariants", dag=Dag) as GenerateWordVariants:
@@ -1190,19 +1190,19 @@ paths_conf = {
 Dag = DAG("search_engine_legos_jiomart_master", default_args=default_args, concurrency=4, schedule_interval=None, tags=["search-engine"])
 
 verticals = [
-    "Fashion",
-    "Electronics",
-    "Home_Lifestyle",
-    "Groceries",
-    "Industrial_Professional_Supplies",
-    "Books_Music_Stationery",
-    "Furniture",
+    # "Fashion",
+    # "Electronics",
+    # "Home_Lifestyle",
+    # "Groceries",
+    # "Industrial_Professional_Supplies",
+    # "Books_Music_Stationery",
+    # "Furniture",
     "Beauty",
-    "Sports_Toys_Luggage",
-    "Wellness",
-    "Crafts_of_India",
-    "Precious_Jewellery",
-    "Premium_Fruits",
+    # "Sports_Toys_Luggage",
+    # "Wellness",
+    # "Crafts_of_India",
+    # "Precious_Jewellery",
+    # "Premium_Fruits",
 ]
 
 with Dag:
@@ -1210,13 +1210,10 @@ with Dag:
     # Dummy task to trigger the DAG group
     alltriggerTask = DummyOperator(task_id="TriggerTask")
 
-    tasks =[]
-
     for vertical in verticals:
         
         triggerTask = DummyOperator(task_id=vertical + "TriggerTask")
             
         vertical_task_dag = task_group(Dag,vertical,conf,paths_conf) 
-        tasks.append(vertical_task_dag)
 
-        alltriggerTask >> triggerTask >> tasks
+        alltriggerTask >> triggerTask >> vertical_task_dag

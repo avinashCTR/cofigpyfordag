@@ -115,19 +115,19 @@ PreProcessCatalogueData = CoutureSpark3Operator(
 # ProcessCatalogueData.set_upstream([GetCatalogueFromFTP])
 
 verticals = [
-    "Fashion",
-    "Electronics",
-    "Home & Lifestyle",
-    "Groceries",
-    "Industrial & Professional Supplies",
-    "Books, Music & Stationery",
-    "Furniture",
+    # "Fashion",
+    # "Electronics",
+    # "Home & Lifestyle",
+    # "Groceries",
+    # "Industrial & Professional Supplies",
+    # "Books, Music & Stationery",
+    # "Furniture",
     "Beauty",
-    "Sports, Toys & Luggage",
-    "Wellness",
-    "Crafts of India",
-    "Precious Jewellery",
-    "Premium Fruits",
+    # "Sports, Toys & Luggage",
+    # "Wellness",
+    # "Crafts of India",
+    # "Precious Jewellery",
+    # "Premium Fruits",
 ]
 
 # we are trying to loop over the level2 for each vertical
@@ -148,7 +148,7 @@ for vertical in verticals:
     # Dummy task to trigger the DAG group
     triggerTask = DummyOperator(task_id=vertical_prefix+"TriggerTask",dag=Dag)
 
-    with TaskGroup(f"{vertical}", dag=Dag) as vertical_group:
+    with TaskGroup(f"{vertical_prefix}Group", dag=Dag) as vertical_group:
         GenerateCatalogueSummary = CoutureSpark3Operator(
             task_id=vertical_prefix+"GenerateCatalogueSummary",
             dag=Dag,
