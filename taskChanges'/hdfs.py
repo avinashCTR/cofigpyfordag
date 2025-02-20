@@ -10,24 +10,20 @@ import argparse
 os.environ["LIBHDFS_OPTS"] = (
             "-Djava.security.krb5.conf=/home/jioapp/aditya/jiomart_cluster/krb5.conf"
         )
-fs = pa.hdfs.connect(host='10.144.96.170', port=8020, kerb_ticket="/home/jioapp/aditya/jiomart_cluster/krb5cc_154046")
+hdfs = pa.hdfs.connect(host='10.144.96.170', port=8020, kerb_ticket="/home/jioapp/aditya/jiomart_cluster/krb5cc_154046")
 
 
 def local_to_hdfs(local_path,hdfs_path):
-    fs.copy_file(
-        source=local_path,
-        destination=hdfs_path,
-        source_filesystem=fs.LocalFileSystem(),
-        destination_filesystem=fs
-    )
+    
+    with open(local_path, 'rb') as f:
+        with hdfs.open(hdfs_path, 'wb') as hdfs_f:
+            hdfs_f.write(f.read())
 
 def hdfs_to_local(hdfs_path,local_path):
-    fs.copy_file(
-        source=hdfs_path,
-        destination=local_path,
-        source_filesystem=fs,
-        destination_filesystem=fs.LocalFileSystem()
-    )
+    
+    with hdfs.open(hdfs_path, 'rb') as f:
+        with open(local_path, 'wb') as local_f:
+            local_f.write(f.read())
 
 if __name__ == "__main__":
 
