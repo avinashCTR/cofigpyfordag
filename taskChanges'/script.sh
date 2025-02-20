@@ -11,8 +11,15 @@ MAX_IPA_COMPUTATIONS=10000
 mkdir temp
 
 # copy the folders from the hdfs to the local
-hdfs dfs -get /app/notebooks/avinash/IPA-TASK/temp/w2r $W2R_PATH
-hdfs dfs -get /app/notebooks/avinash/IPA-TASK/temp/ipa_meta_data $IPA_META_DATA_PATH
+python3 hdfs.py \
+    --direction hdfs_to_local \
+    --local_path temp/w2r_scored \
+    --hdfs_path /app/notebooks/avinash/IPA-TASK/temp/w2r_scored
+
+python3 hdfs.py \
+    --direction hdfs_to_local \
+    --local_path temp/ipa_meta_data_output \
+    --hdfs_path /app/notebooks/avinash/IPA-TASK/temp/ipa_meta_data_output
 
 # Path to the Python file on your local machine
 LOCAL_PYTHON_FILE="/absolute/path/to/your/python_script.py"
@@ -50,8 +57,15 @@ docker cp avinash:/app/w2r_scored $W2R_SCORED_PATH
 docker cp avinash:/app/ipa_meta_data_output $IPA_META_DATA_OUTPUT_PATH
 
 # send the folders to the hdfs
-hdfs dfs -put $W2R_SCORED_PATH /app/notebooks/avinash/IPA-TASK/temp/w2r_scored
-hdfs dfs -put $IPA_META_DATA_OUTPUT_PATH /app/notebooks/avinash/IPA-TASK/temp/ipa_meta_data_output
+python3 hdfs.py \
+    --direction local_to_hdfs \
+    --local_path $W2R_SCORED_PATH \
+    --hdfs_path /app/notebooks/avinash/IPA-TASK/temp/w2r_scored
+
+python3 hdfs.py \
+    --direction local_to_hdfs \
+    --local_path $IPA_META_DATA_OUTPUT_PATH \
+    --hdfs_path /app/notebooks/avinash/IPA-TASK/temp/ipa_meta_data_output
 
 # clean up temp folders
 rm -rf temp
