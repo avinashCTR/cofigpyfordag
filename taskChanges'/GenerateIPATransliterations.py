@@ -139,11 +139,11 @@ class GenerateIPATransliterations():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate IPA Transliterations')
-    parser.add_argument('--w2r_path', type=str, help='Path to the input DF with columns [wrongword, rightword]')
-    parser.add_argument('--ipa_meta_data_path', type=str, help='Path to the cache DF with columns [word, ipa_transliteration]')
-    parser.add_argument('--w2r_scored_path', type=str, help='Path to the output DF with columns [wrongword, rightword, ipa_wrongword, ipa_rightword]')
-    parser.add_argument('--ipa_meta_data_output_path', type=str, help='Path to the output cache DF with columns [word, ipa_transliteration]')
-    parser.add_argument('--max_ipa_computations', type=int, default=10000, help='Maximum number of new IPA computations to allow')
+    parser.add_argument('--w2r_path', type=str)
+    parser.add_argument('--ipa_meta_data_path', type=str)
+    parser.add_argument('--w2r_scored_path', type=str)
+    parser.add_argument('--ipa_meta_data_output_path', type=str)
+    parser.add_argument('--max_ipa_computations', type=int, default=10000)
 
     args = parser.parse_args()
 
