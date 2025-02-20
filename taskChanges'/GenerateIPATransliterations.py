@@ -3,6 +3,9 @@ import pandas as pd
 from pathlib import Path
 import argparse
 import sys
+import pyarrow as pa
+import pyarrow.parquet as pq
+from pyarrow import fs
 
 
 class GenerateIPATransliterations():
@@ -30,6 +33,12 @@ class GenerateIPATransliterations():
     max_ipa_computations = None
 
     def __init__(self,max_ipa_computations=10000,w2r_path=None,ipa_meta_data_path=None,w2r_scored_path=None,ipa_meta_data_output_path=None):
+        
+        #filesystems
+        self.fs = fs.LocalFileSystem()
+        self.hdfs = fs.HadoopFileSystem("default")
+        self.temp_dir = "/tmp"
+        
         # inputs
         self.max_ipa_computations = max_ipa_computations
         self.w2r_path = w2r_path
@@ -39,10 +48,17 @@ class GenerateIPATransliterations():
         self.w2r_scored_path = w2r_scored_path
         self.ipa_meta_data_output_path = ipa_meta_data_output_path
 
+    def local_to_hdfs(self,local_path,hdfs_path):
+        fs.copy_file(
+            source=local_path,
+            destination=hdfs_path,
+            source_filesystem=self.fs,
+            destination_filesystem=self.hdfs
+        )
 
     def load(self):
-        self.w2r_df = spark.read.option("header",true).parquet(self.w2r_path)
-        self.ipa_meta_data = spark.read.option("header",true).parquet(self.ipa_meta_data_path)
+        self.w2r_df = pq.ParquetDataset(self.w2r_path,self.hdfs).read().to_pandas()
+        self.ipa_meta_data = pq.ParquetDataset(self.ipa_meta_data_path,self.hdfs).read().to_pandas()
 
     def transform(self):
         self.w2r_ipa_df = self.w2r_df.copy()
@@ -63,8 +79,11 @@ class GenerateIPATransliterations():
         self.w2r_ipa_df = self.w2r_ipa_df.rename(columns={"ipa_transliteration": "ipa_wrongword"})
 
     def save(self):
-        self.w2r_ipa_df.write.option("header",true).parquet(self.w2r_scored_path)
-        self.ipa_meta_data.write.option("header",true).parquet(self.ipa_meta_data_output_path)
+        # Save the final DFs to HDFS
+        self.w2r_ipa_df.to_parquet(self.temp_dir + "/w2r_ipa_df.parquet")
+        self.local_to_hdfs(self.temp_dir + "/w2r_ipa_df.parquet",self.w2r_scored_path)
+        self.ipa_meta_data.to_parquet(self.temp_dir + "/ipa_meta_data.parquet")
+        self.local_to_hdfs(self.temp_dir + "/ipa_meta_data.parquet",self.ipa_meta_data_output_path)
 
     def test(self):
 
