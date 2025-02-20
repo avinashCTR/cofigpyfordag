@@ -22,23 +22,23 @@ CONTAINER_DIR="/app"
 CONTAINER_PYTHON_FILE="$CONTAINER_DIR/python_script.py"
 
 # Start the container with a dummy process to keep it alive
-docker run -dit --name my_container my_image tail -f /dev/null
+docker run -dit --name avinash my_image tail -f /dev/null
 
 # Ensure the destination directory exists inside the container
-docker exec my_container mkdir -p "$CONTAINER_DIR"
+docker exec avinash mkdir -p "$CONTAINER_DIR"
 
 # Copy the Python file to the Docker container
-docker cp "$LOCAL_PYTHON_FILE" my_container:"$CONTAINER_PYTHON_FILE"
+docker cp "$LOCAL_PYTHON_FILE" avinash:"$CONTAINER_PYTHON_FILE"
 
 # copy the folders from the local to the container
-docker cp $W2R_PATH my_container:/app
-docker cp $IPA_META_DATA_PATH my_container:/app
+docker cp $W2R_PATH avinash:/app
+docker cp $IPA_META_DATA_PATH avinash:/app
 
 # Verify that the Python file exists inside the container
-docker exec my_container ls -l "$CONTAINER_PYTHON_FILE"
+docker exec avinash ls -l "$CONTAINER_PYTHON_FILE"
 
 # Execute the Python file with the arguments inside the Docker container
-docker exec my_container python3 "$CONTAINER_PYTHON_FILE" \
+docker exec avinash python3 "$CONTAINER_PYTHON_FILE" \
     --w2r_path "$W2R_PATH" \
     --ipa_meta_data_path "$IPA_META_DATA_PATH" \
     --w2r_scored_path "$W2R_SCORED_PATH" \
@@ -46,8 +46,8 @@ docker exec my_container python3 "$CONTAINER_PYTHON_FILE" \
     --max_ipa_computations "$MAX_IPA_COMPUTATIONS"
 
 # copy the folders from the container to the local
-docker cp my_container:/app/w2r_scored $W2R_SCORED_PATH
-docker cp my_container:/app/ipa_meta_data_output $IPA_META_DATA_OUTPUT_PATH
+docker cp avinash:/app/w2r_scored $W2R_SCORED_PATH
+docker cp avinash:/app/ipa_meta_data_output $IPA_META_DATA_OUTPUT_PATH
 
 # send the folders to the hdfs
 hdfs dfs -put $W2R_SCORED_PATH /app/notebooks/avinash/IPA-TASK/temp/w2r_scored
@@ -57,5 +57,5 @@ hdfs dfs -put $IPA_META_DATA_OUTPUT_PATH /app/notebooks/avinash/IPA-TASK/temp/ip
 rm -rf temp
 
 # (Optional) Stop and remove the container after execution
-docker stop my_container
-docker rm my_container
+docker stop avinash
+docker rm avinash
