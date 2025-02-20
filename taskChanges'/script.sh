@@ -8,16 +8,23 @@ IPA_META_DATA_OUTPUT_PATH="value4"
 MAX_IPA_COMPUTATIONS=10000
 
 # Path to the Python file on your local machine
-LOCAL_PYTHON_FILE="/path/to/your/python_script.py"
+LOCAL_PYTHON_FILE="/absolute/path/to/your/python_script.py"
 
-# Destination path for the Python file inside the Docker container
-CONTAINER_PYTHON_FILE="/app/python_script.py"
+# Destination directory and file inside the Docker container
+CONTAINER_DIR="/app"
+CONTAINER_PYTHON_FILE="$CONTAINER_DIR/python_script.py"
 
 # Start the container with a dummy process to keep it alive
 docker run -dit --name my_container my_image tail -f /dev/null
 
+# Ensure the destination directory exists inside the container
+docker exec my_container mkdir -p "$CONTAINER_DIR"
+
 # Copy the Python file to the Docker container
 docker cp "$LOCAL_PYTHON_FILE" my_container:"$CONTAINER_PYTHON_FILE"
+
+# Verify that the Python file exists inside the container
+docker exec my_container ls -l "$CONTAINER_PYTHON_FILE"
 
 # Execute the Python file with the arguments inside the Docker container
 docker exec my_container python3 "$CONTAINER_PYTHON_FILE" \
