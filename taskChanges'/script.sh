@@ -7,6 +7,13 @@ W2R_SCORED_PATH="value3"
 IPA_META_DATA_OUTPUT_PATH="value4"
 MAX_IPA_COMPUTATIONS=10000
 
+#make a temp folder
+mkdir temp
+
+# copy the folders from the hdfs to the local
+hdfs dfs -get /app/notebooks/avinash/IPA-TASK/temp/w2r $W2R_PATH
+hdfs dfs -get /app/notebooks/avinash/IPA-TASK/temp/ipa_meta_data $IPA_META_DATA_PATH
+
 # Path to the Python file on your local machine
 LOCAL_PYTHON_FILE="/absolute/path/to/your/python_script.py"
 
@@ -23,6 +30,10 @@ docker exec my_container mkdir -p "$CONTAINER_DIR"
 # Copy the Python file to the Docker container
 docker cp "$LOCAL_PYTHON_FILE" my_container:"$CONTAINER_PYTHON_FILE"
 
+# copy the folders from the local to the container
+docker cp $W2R_PATH my_container:/app
+docker cp $IPA_META_DATA_PATH my_container:/app
+
 # Verify that the Python file exists inside the container
 docker exec my_container ls -l "$CONTAINER_PYTHON_FILE"
 
@@ -33,6 +44,17 @@ docker exec my_container python3 "$CONTAINER_PYTHON_FILE" \
     --w2r_scored_path "$W2R_SCORED_PATH" \
     --ipa_meta_data_output_path "$IPA_META_DATA_OUTPUT_PATH" \
     --max_ipa_computations "$MAX_IPA_COMPUTATIONS"
+
+# copy the folders from the container to the local
+docker cp my_container:/app/w2r_scored $W2R_SCORED_PATH
+docker cp my_container:/app/ipa_meta_data_output $IPA_META_DATA_OUTPUT_PATH
+
+# send the folders to the hdfs
+hdfs dfs -put $W2R_SCORED_PATH /app/notebooks/avinash/IPA-TASK/temp/w2r_scored
+hdfs dfs -put $IPA_META_DATA_OUTPUT_PATH /app/notebooks/avinash/IPA-TASK/temp/ipa_meta_data_output
+
+# clean up temp folders
+rm -rf temp
 
 # (Optional) Stop and remove the container after execution
 docker stop my_container
