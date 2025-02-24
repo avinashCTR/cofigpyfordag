@@ -108,7 +108,7 @@ def task_group(dag,vertical,conf,paths_conf):
                 ExtractCatalogueRightWords = CoutureSparkOperator(
                     task_id=vertical_prefix+"ExtractCatalogueRightWords",
                     dag=Dag,
-                    code_artifact=code_artifact,
+                    code_artifact="couture-search-pipelines-2.0.0-tunuguntla.jar",
                     class_path=classPath,
                     method_id="ExtractAndFilterRightWords",
                     method_args_dict=conf["ExtractCatalogueRightWords"]["method_args_dict"],
