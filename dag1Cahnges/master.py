@@ -17,6 +17,7 @@ from DagOperatorPlugin import DagOperator
 import re
 import pprint
 from datetime import datetime, timedelta
+import textwrap
 
 # =============================================== Python File Imports (configeration import) =================================================
 from jiomart_legos_conf import task_configs as conf
@@ -451,6 +452,7 @@ def task_group(dag,vertical,conf,paths_conf):
                 description=''
             )
             # GetColourSynonyms.set_upstream([FilterMerchantCorrections])
+        GenerateSynonyms.set_upstream([ExtractValidRightWords])
 
         with TaskGroup(vertical_prefix+"GenerateSplitPhrases", dag=Dag) as GenerateSplitPhrases:
             SplitWords = CouturePythonDockerOperator(
@@ -531,6 +533,8 @@ def task_group(dag,vertical,conf,paths_conf):
                 description=""
             )
             GenerateUserSplitWords.set_upstream([FilterRightQueriesFromHistory])
+            
+        GenerateSplitPhrases.set_upstream([ExtractValidRightWords])
 
         with TaskGroup(vertical_prefix+"RefineTokenCategories", dag=Dag) as RefineTokenCategories:
             FilterCategoriesForPhrases = CoutureSparkOperator(
@@ -802,7 +806,7 @@ def task_group(dag,vertical,conf,paths_conf):
                     --w2r-scored-path "{dirPathProcessed}W2RWithIPATransliterations" \
                     --ipa-meta-output-path "{dirPathProcessed}IPATransliterationsAutomaticAccumulator{datetime.now().strftime('%Y%m%d')}Out" \
                     --cache-path "/data1/archive/avinash/CACHE" \
-                    --max-ipa-computations 10000
+                    --max-ipa-computations 1000000
                     """
             )
 
@@ -1224,14 +1228,14 @@ Dag = DAG("search_engine_legos_jiomart_master", default_args=default_args, concu
 
 # =============================================== Verticals ========================================================================================
 verticals = [
-    # "Fashion",
+    "Fashion",
     # "Electronics",
     # "Home_Lifestyle",
     # "Groceries",
     # "Industrial_Professional_Supplies",
     # "Books_Music_Stationery",
     # "Furniture",
-    "Beauty",
+    # "Beauty",
     # "Sports_Toys_Luggage",
     # "Wellness",
     # "Crafts_of_India",
