@@ -797,10 +797,10 @@ def task_group(dag,vertical,conf,paths_conf):
             bash_command = textwrap.dedent(
                     f"""
                     {env_command} && sh /app/notebooks/avinash/IPA-TASK/ipa-task.sh \
-                    --w2r-path "/data1/searchengine/processed/jiomart/05092024/V6_delta_changes/Unified3VerticalsSelectAttributes/W2RAllVariantsCleaned" \
-                    --ipa-meta-path "/data1/searchengine/processed/jiomart/accumulateddata/IPATransliterationsAutomaticAccumulator20250117" \
-                    --w2r-scored-path "/data1/archive/avinash/W2RWithIPATransliterations" \
-                    --ipa-meta-output-path "/data1/archive/avinash/IPATransliterationsAutomaticAccumulator_avinash" \
+                    --w2r-path "{dirPathProcessed}W2RAllVariantsCleaned" \
+                    --ipa-meta-path "{dirCummulativePath}IPATransliterationsAutomaticAccumulator20250117" \
+                    --w2r-scored-path "{dirPathProcessed}W2RWithIPATransliterations" \
+                    --ipa-meta-output-path "{dirPathProcessed}IPATransliterationsAutomaticAccumulator{datetime.now().strftime('%Y%m%d')}Out" \
                     --cache-path "/data1/archive/avinash/CACHE" \
                     --max-ipa-computations 10000
                     """
